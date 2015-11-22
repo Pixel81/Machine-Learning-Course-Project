@@ -2,7 +2,7 @@
 title: "Machine Learning Course Project"
 author: "Pixel"
 date: "Tuesday, November 17, 2015"
-output: html_document
+output: word_document
 ---
 
 ## Background
