@@ -12,7 +12,7 @@ Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible t
 Source : http://groupware.les.inf.puc-rio.br/har
 Velloso, E.; Bulling, A.; Gellersen, H.; Ugulino, W.; Fuks, H. Qualitative Activity Recognition of Weight Lifting Exercises. Proceedings of 4th International Conference in Cooperation with SIGCHI (Augmented Human '13) . Stuttgart, Germany: ACM SIGCHI, 2013.
 
-Read more: http://groupware.les.inf.puc-rio.br/har#ixzz3rmmb2yKx
+*Read more: http://groupware.les.inf.puc-rio.br/har#ixzz3rmmb2yKx*
 
 **Libraries used**
 ```{r library load, echo=TRUE}
@@ -23,14 +23,14 @@ library(rattle)
 library(randomForest)
 ```
 
-## Loading data
+##1.Loading data
 First we load the training and test data from the 2 files with url links.
 ```{r loading data, echo=TRUE}
 trainSet01 <- read.csv(url("http://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"), na.strings = c("NA","#DIV/0!",""))
 testSet01 <- read.csv(url("http://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"), na.strings = c("NA","#DIV/0!",""))
 ```
 
-## Data discovery
+##2.Data discovery
 We take a first look at our data to see what's coming.
 ```{r data summary, echo=TRUE}
 summary(trainSet01)
@@ -38,7 +38,7 @@ summary(trainSet01)
 
 We can observ that some columns of our data set are filled with NA values.  
 
-## Cleaning data
+##3.Cleaning data
 Because of NA values in the data set, we now subset this columns from our training and testing set.
 ```{r data cleaning step 1, echo=TRUE}
 trainSet02 <- trainSet01[,colSums(is.na(trainSet01)) == 0]
@@ -54,7 +54,7 @@ trainSet03 <- trainSet02[,-c(1:7)]
 testSet03 <- testSet02[,-c(1:7)]
 ```
 
-## Modelisation
+##4.Modelisation
 Now, we focus on the training set (trainSet03). TO make our model reproducible, we set the seed.
 ```{r set seed, echo=TRUE}
 set.seed(201281)
@@ -99,7 +99,7 @@ With a random forest modelisation, we have a quasi perfect match, with 99% of ac
 
 We select our random forest model as final model.  
 
-## Submission
+##5. Prediction
 In order to make the submission, we first apply our final model to the test set,
 and then take a look at the answers.Because of his accuracy, we choose random forest model.
 ```{r final test prediction, echo=TRUE}
@@ -108,6 +108,7 @@ prediction <- predict(finalModel, testSet02)
 prediction
 ```
 
+##6. Submission
 Then, with a function given in the submission, we create a file per answer and apply it to the prediction object.
 ```{r submission files creation, echo=TRUE}
 pml_write_files = function(x){
