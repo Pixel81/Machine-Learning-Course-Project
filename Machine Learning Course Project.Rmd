@@ -1,0 +1,123 @@
+---
+title: "Machine Learning Course Project"
+author: "Pixel"
+date: "Tuesday, November 17, 2015"
+output: html_document
+---
+
+## Background
+
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement - a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: http://groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset). 
+
+Source : http://groupware.les.inf.puc-rio.br/har
+Velloso, E.; Bulling, A.; Gellersen, H.; Ugulino, W.; Fuks, H. Qualitative Activity Recognition of Weight Lifting Exercises. Proceedings of 4th International Conference in Cooperation with SIGCHI (Augmented Human '13) . Stuttgart, Germany: ACM SIGCHI, 2013.
+
+Read more: http://groupware.les.inf.puc-rio.br/har#ixzz3rmmb2yKx
+
+**Libraries used**
+```{r library load, echo=TRUE}
+library(caret)
+library(AppliedPredictiveModeling)
+library(rpart)
+library(rattle)
+library(randomForest)
+```
+
+## Loading data
+First we load the training and test data from the 2 files with url links.
+```{r loading data, echo=TRUE}
+trainSet01 <- read.csv(url("http://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"), na.strings = c("NA","#DIV/0!",""))
+testSet01 <- read.csv(url("http://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"), na.strings = c("NA","#DIV/0!",""))
+```
+
+## Data discovery
+We take a first look at our data to see what's coming.
+```{r data summary, echo=TRUE}
+summary(trainSet01)
+```
+
+We can observ that some columns of our data set are filled with NA values.  
+
+## Cleaning data
+Because of NA values in the data set, we now subset this columns from our training and testing set.
+```{r data cleaning step 1, echo=TRUE}
+trainSet02 <- trainSet01[,colSums(is.na(trainSet01)) == 0]
+testSet02 <- testSet01[,colSums(is.na(testSet01)) == 0]
+```
+
+Obviously, there a few columns at the beginning of the file that doesn't seem
+relevant for our modelisation, such as ID of the record (X), user name, or 
+time stamp. So we take back this columns from the data set. We only maintain our
+data from the 8th column (roll_belt).
+```{r data cleaning step 2, echo=TRUE}
+trainSet03 <- trainSet02[,-c(1:7)]
+testSet03 <- testSet02[,-c(1:7)]
+```
+
+## Modelisation
+Now, we focus on the training set (trainSet03). TO make our model reproducible, we set the seed.
+```{r set seed, echo=TRUE}
+set.seed(201281)
+```
+
+In order to make a cross validation of our model, we split the training set into a training and a test set.
+```{r training split, echo=TRUE}
+trainingSplit = createDataPartition(y = trainSet03$classe,
+                                    p = 0.75, list=FALSE)
+trainingSet = trainSet03[ trainingSplit,]
+testingSet = trainSet03[-trainingSplit,]
+dim(trainingSet); dim(testingSet)
+```
+
+We are now going to try 2 different modelisation in order to optimize accuracy of our prediction. Because of their accuracy, we'll try decision tree and random forest modelisation.
+
+First, we are going to make a decision tree and take a look at the final model.
+```{r decision tree, echo=TRUE}
+treeModel <- rpart(classe ~ ., data = trainingSet, method = "class")
+print(treeModel)
+fancyRpartPlot(treeModel)
+```
+
+We now test our model on a prediction and visualize result in a confusion matrix.
+```{r decision tree prediction, echo=TRUE}
+predictionTree <- predict(treeModel, testingSet, type = "class")
+confusionMatrix(predictionTree, testingSet$classe)
+```
+
+According to the accuracy of the model (75%), we now try a random forest model to optimize our outcome in prediction.
+```{r random forest, echo=TRUE}
+rfModel <- randomForest(classe ~ ., data = trainingSet, method = "class")
+print(rfModel)
+```
+
+We also test our random forest model on a prediction and visualize result in a confusion matrix.
+```{r random forest prediction, echo=TRUE}
+predictionRF <- predict(rfModel, testingSet, type = "class")
+confusionMatrix(predictionRF, testingSet$classe)
+```
+With a random forest modelisation, we have a quasi perfect match, with 99% of accuracy in our cross validation test.
+
+We select our random forest model as final model.  
+
+## Submission
+In order to make the submission, we first apply our final model to the test set,
+and then take a look at the answers.Because of his accuracy, we choose random forest model.
+```{r final test prediction, echo=TRUE}
+finalModel <- rfModel
+prediction <- predict(finalModel, testSet02)
+prediction
+```
+
+Then, with a function given in the submission, we create a file per answer and apply it to the prediction object.
+```{r submission files creation, echo=TRUE}
+pml_write_files = function(x){
+  n = length(x)
+  for(i in 1:n){
+    filename = paste0("problem_id_",i,".txt")
+    write.table(x[i],file=filename,quote=FALSE,row.names=FALSE,col.names=FALSE)
+  }
+}
+pml_write_files(prediction)
+```
+The answers files are now created. We publish their by the web interface on the 
+Coursera website. The result is good, with a 20/20 score. The model seem to be working.
